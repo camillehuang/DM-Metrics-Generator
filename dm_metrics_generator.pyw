@@ -190,11 +190,11 @@ def main(argv=None):
     case = raw_input('Input number:')
     #t = datetime(2011, 9, 19, 17, 0, 0) # specify date time
     if datetime.now().minute <30:
-        t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour-1, 30, 0)
+        t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, 30, 0)+timedelta(hours=-1)
         end_t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, 30, 0)
     else:
         t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, 0, 0)
-        end_t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour+1, 0, 0)
+        end_t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, 0, 0)+timedelta(hours=+1)
 
     #index_throughput(t, end_t, INDEXER_NAME, 0,0,0,0) # splunk-1550,1551, 1552. Input the whole day
     if case == '1':
@@ -224,7 +224,7 @@ def main(argv=None):
     print 'Please empty metrics.log and past the content of ' + file_name + ' and then save.'
     if raw_input('Backup and copy newly savedsearches.conf to DM (C:\\Program Files\\Splunk\\etc\\apps\\SplunkDeploymentMonitor\\local)?n (y/n)') == 'y':
         copy("savedsearches.conf", 'C:\\Program Files\\Splunk\\etc\\apps\\SplunkDeploymentMonitor\\local') 
-    webbrowser.open('C:\Splunk\Python')
+    #webbrowser.open('C:\Splunk\Python')
     #dircache.opendir('C:\\Program Files\\Splunk\\var\\log\\splunk') 
     #webbrowser.open('C:\Program Files\Splunk\var\log\splunk')
     print 'The event count is %s' % (event_count)
