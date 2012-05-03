@@ -3,7 +3,7 @@ Testlink test category: Deployment Monitoring manual testing
  Preconditions:
     1. suggest to enable DM on search head only.
     2. Clean DM's eventdata and clean all the contetct of metrics.log file.
-    3. Don't adjust your machine time and try to speed up testing progress.
+    3. Don't adjust your machine time when splunk start.
     4. Create some saved searches for indexing past data at the same time
  Postconditions: None
     1. Remove added saved searches after test finished
