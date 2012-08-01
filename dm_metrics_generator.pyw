@@ -4,7 +4,7 @@ Meta
     $Id: //splunk/branches/bieber/test/bin/dm_metrics_generator.py#1 $
     $DateTime: 2011/10/05 10:03:01 $
     $Author: chuang $
-    $Change: ? $
+    $Change: 2012/07/31 $
 """
 
 '''
@@ -12,34 +12,31 @@ Testlink test category: Deployment Monitoring manual testing
  Purpose: generate some events of metrics.log to help manual test progress
  Preconditions:
     1. suggest to enable DM on search head only.
-    2. Clean DM's eventdata and clean all the contetct of metrics.log file.
-    3. Don't adjust your machine time and try to speed up testing progress.
-    4. Create some saved searches for indexing past data at the same time
+    2. Clean all eventdata and execute this script.
+    3. Adjust your machine time after stop splunk.
+    4. Create some saved searches for indexing past data at the same time. (make your life easier)
  Postconditions: None
-    1. Remove added saved searches after test finished
+    1. Remove added saved searches after test finished manually.
 '''
-import webbrowser
+import os
 from datetime import datetime, timedelta
 from shutil import copy
-#import dircache
 
 file_name = str(datetime.now().strftime("%Y%m%d_%H%M")) + '-metrics.txt'
 f = open(file_name,'w')
 #FORWARDER_NAME = 'chuangteki-macbook-pro.local'
-FORWARDER_NAME = '¥d»e¨àªºÂàµoªÌ2'
+FORWARDER_NAME = 'FakeForwarder'#'å¡èœœå…’çš„è½‰ç™¼è€…2'
 FORWARDER_IP = '172.18.90.235'
 LAST_INDEXER_IP = '172.18.90.230'
 #HOST_NAME = 'WIN-VS1UV357AGH'
 
-HOST_NAME = '¥d»e¨àªºVM'
+HOST_NAME = 'FakeHostName'#'å¡èœœå…’çš„VM'
 #GUID = '2A4A2102-EF26-40B7-9E0D-DE3FB13CA15A'
 GUID = '2A4A2102-EF26-40B7-9E0D-DE3FB13CA15B'
-INDEXER_NAME = 'WIN-VS1UV357AGH'
-SPLUNK_VERSION = '4.2.4' # edit it every version
+INDEXER_NAME = 'chuang-fake'
+SPLUNK_VERSION = '4.3.4' # edit it every version
 INTERVAL = 60 #30sec
 event_count = 0
-
-
 
 #------------Write log-------------------------------------------------------------------------------------
 def log_per_host_thruput(dt, Name, kb):
@@ -79,12 +76,12 @@ def index_throughput(t, end_t, indexerNameLog, lastWeek_index_kb, today_index_kb
         
     if is_over_load == 1:
         multiple = 1
-    
+
+    t = t + timedelta(minutes=-30)
     if lastWeek_index_kb >= 0 and is_over_load != 1: # generate last week if index kb >=0
        # Last week
-       print "It includes past data of last week."
-       t_lastWeek = t + timedelta(days=-7) + timedelta(minutes=-30)
-       end_t_lastWeek = t + timedelta(days=-6) + timedelta(minutes=-30)
+       t_lastWeek = t + timedelta(days=-7) 
+       end_t_lastWeek = t + timedelta(days=-6)# + timedelta(minutes=-30)
     
        while t_lastWeek < end_t_lastWeek:
           dt = t_lastWeek.strftime("%m-%d-%Y %H:%M:%S.000 +0800")
@@ -186,6 +183,9 @@ def license_usage_summary(t, end_t):
 
 #-----------Main------------------------------------------------------------------------------------------------   
 def main(argv=None):
+    saved_search_conf_path = os.path.join(os.path.expandvars("%SPLUNK_HOME%"), "etc", "apps", "SplunkDeploymentMonitor", "local")
+    metrics_file = os.path.join(os.path.expandvars("%SPLUNK_HOME%"), "var", "log", "splunk", "metrics.log")
+    
     print 'Select test item:\n1. 1557:quiet forwarder\n2. 1561:less data forwarder\n3. 1554:idle indexer\n4. 1555:over loaded indexer\n5. 1760:license usage/report\n6. 1550~1552:index throughput'
     case = raw_input('Input number:')
     #t = datetime(2011, 9, 19, 17, 0, 0) # specify date time
@@ -212,21 +212,26 @@ def main(argv=None):
         end_t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour+1, 0, 0)
         license_usage_summary(t, end_t)
     elif case == '6':
-        t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0, 0) + timedelta(days=-1)
-        end_t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, 0, 0) + timedelta(hours=+1)
-        index_throughput(t, end_t, INDEXER_NAME, 30, 60, 100, 200, 0) #lastweek=1mb, today=2mb
-        print 'lastweek=1mb, today=2mb'
+        t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0, 0)# + timedelta(hours=-1) #today 0:00
+        end_t = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, 0, 0)+ timedelta(hours=+1) # end of this hour
+        kbps = raw_input('Today throughput :(2KBps)')
+        if len(kbps) == 0:
+            kbps = 2
+        else:
+            kbps = int(kbps)
+        kb = kbps*INTERVAL
+        index_throughput(t, end_t, INDEXER_NAME, kb/2, kb, 100, 200, 0) #today is double of lastweek
+        print 'lastweek per event=%dKB, today per event=%dKB. lastweek avg=%dKBps, today avg=%dKBps' % (kb/2, kb, kbps/2, kbps)
     else: exit()
 
     #indexingPastSavedsearches()
     
     f.close()    
-    print 'Please empty metrics.log and past the content of ' + file_name + ' and then save.'
-    if raw_input('Backup and copy newly savedsearches.conf to DM (C:\\Program Files\\Splunk\\etc\\apps\\SplunkDeploymentMonitor\\local)?n (y/n)') == 'y':
-        copy("savedsearches.conf", 'C:\\Program Files\\Splunk\\etc\\apps\\SplunkDeploymentMonitor\\local') 
-    #webbrowser.open('C:\Splunk\Python')
-    #dircache.opendir('C:\\Program Files\\Splunk\\var\\log\\splunk') 
-    #webbrowser.open('C:\Program Files\Splunk\var\log\splunk')
+    #print 'Please empty metrics.log and past the content of ' + file_name + ' and then save in UTF-8 format.'
+    
+    if raw_input('Copy the savedsearches.conf to DM %s?n (y/n)' % (saved_search_conf_path)) == 'y':
+        copy("savedsearches.conf", saved_search_conf_path) 
+    copy(file_name, metrics_file)
     print 'The event count is %s' % (event_count)
 
 if __name__ == "__main__":
