@@ -185,6 +185,7 @@ def license_usage_summary(t, end_t):
 def main(argv=None):
     saved_search_conf_path = os.path.join(os.path.expandvars("%SPLUNK_HOME%"), "etc", "apps", "SplunkDeploymentMonitor", "local")
     metrics_file = os.path.join(os.path.expandvars("%SPLUNK_HOME%"), "var", "log", "splunk", "metrics.log")
+
     
     print 'Select test item:\n1. 1557:quiet forwarder\n2. 1561:less data forwarder\n3. 1554:idle indexer\n4. 1555:over loaded indexer\n5. 1760:license usage/report\n6. 1550~1552:index throughput'
     case = raw_input('Input number:')
@@ -227,11 +228,12 @@ def main(argv=None):
     #indexingPastSavedsearches()
     
     f.close()    
-    #print 'Please empty metrics.log and past the content of ' + file_name + ' and then save in UTF-8 format.'
-    
     if raw_input('Copy the savedsearches.conf to DM %s?n (y/n)' % (saved_search_conf_path)) == 'y':
         copy("savedsearches.conf", saved_search_conf_path) 
-    copy(file_name, metrics_file)
+    if raw_input('Do you like to copy to local metrics.log automatically?y (y/n)') == 'n':
+        print 'Please empty metrics.log and past the content of ' + file_name + ' and then save in UTF-8 format.'
+    else:
+        copy(file_name, metrics_file)
     print 'The event count is %s' % (event_count)
 
 if __name__ == "__main__":
